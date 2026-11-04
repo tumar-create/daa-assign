@@ -11,8 +11,18 @@ public class Marker {
      * Example: p = "ACGAC" gives [0, 0, 0, 1, 2]. The last number is the "Border length" line.
      */
     public static int[] prefixFunction(String p) {
-        // TODO Mission 3a
-        return new int[p.length()];
+        int m = p.length();
+        int[] pi = new int[m];
+        for (int i = 1, k = 0; i < m; i++) {
+            while (k > 0 && p.charAt(i) != p.charAt(k)) {
+                k = pi[k - 1];
+            }
+            if (p.charAt(i) == p.charAt(k)) {
+                k++;
+            }
+            pi[i] = k;
+        }
+        return pi;
     }
 
     /**
@@ -22,8 +32,31 @@ public class Marker {
      * the first one is "First hit" (-1 when there is none).
      */
     public static int[] findAll(String text, String p) {
-        // TODO Mission 3b
-        return new int[0];
+        if (p.isEmpty()) return new int[0];
+        int n = text.length();
+        int m = p.length();
+        if (n < m) return new int[0];
+
+        int[] pi = prefixFunction(p);
+        List<Integer> matches = new ArrayList<>();
+        int k = 0;
+        for (int i = 0; i < n; i++) {
+            while (k > 0 && (k == m || text.charAt(i) != p.charAt(k))) {
+                k = pi[k - 1];
+            }
+            if (text.charAt(i) == p.charAt(k)) {
+                k++;
+            }
+            if (k == m) {
+                matches.add(i - m + 1);
+            }
+        }
+
+        int[] res = new int[matches.size()];
+        for (int i = 0; i < matches.size(); i++) {
+            res[i] = matches.get(i);
+        }
+        return res;
     }
 
     /**
@@ -35,7 +68,70 @@ public class Marker {
      * Example: a = "ACGTAC", b = "TTACGT", k = 4: the words of a are ACGT, CGTA, GTAC; only ACGT is in b, so the answer is 1.
      */
     public static int sharedWords(String a, String b, int k) {
-        // TODO Mission 4
-        return -1;
+        int n = a.length();
+        int m = b.length();
+        if (n < k || m < k) return 0;
+
+        final long BASE = 31;
+        final long MOD = 1_000_000_007L;
+
+        long basePow = 1;
+        for (int i = 0; i < k - 1; i++) {
+            basePow = (basePow * BASE) % MOD;
+        }
+
+        Map<Long, List<Integer>> bHashes = new HashMap<>();
+
+        // Compute hashes for all windows in b
+        long hashB = 0;
+        for (int i = 0; i < k; i++) {
+            hashB = (hashB * BASE + b.charAt(i)) % MOD;
+        }
+        bHashes.computeIfAbsent(hashB, x -> new ArrayList<>()).add(0);
+
+        for (int j = 1; j <= m - k; j++) {
+            long prevChar = b.charAt(j - 1);
+            long nextChar = b.charAt(j + k - 1);
+            hashB = ((hashB - (prevChar * basePow) % MOD + MOD) % MOD * BASE + nextChar) % MOD;
+            bHashes.computeIfAbsent(hashB, x -> new ArrayList<>()).add(j);
+        }
+
+        // Slide over a and check
+        int count = 0;
+        long hashA = 0;
+        for (int i = 0; i < k; i++) {
+            hashA = (hashA * BASE + a.charAt(i)) % MOD;
+        }
+
+        if (matchesAny(a, 0, b, bHashes.get(hashA), k)) {
+            count++;
+        }
+
+        for (int i = 1; i <= n - k; i++) {
+            long prevChar = a.charAt(i - 1);
+            long nextChar = a.charAt(i + k - 1);
+            hashA = ((hashA - (prevChar * basePow) % MOD + MOD) % MOD * BASE + nextChar) % MOD;
+
+            if (matchesAny(a, i, b, bHashes.get(hashA), k)) {
+                count++;
+            }
+        }
+
+        return count;
+    }
+
+    private static boolean matchesAny(String a, int startA, String b, List<Integer> bPositions, int k) {
+        if (bPositions == null) return false;
+        for (int startB : bPositions) {
+            boolean equal = true;
+            for (int d = 0; d < k; d++) {
+                if (a.charAt(startA + d) != b.charAt(startB + d)) {
+                    equal = false;
+                    break;
+                }
+            }
+            if (equal) return true;
+        }
+        return false;
     }
 }
