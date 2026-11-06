@@ -1,8 +1,8 @@
 # Assignment 4. Patient Zero
 
 Student ID: 253447
-Name:
-Group:
+Name: Tumar Smagul
+Group: 2510
 
 This file is the report. Fill it in as you go. How to start: `START_HERE.md`. The task: `docs/Assignment4.pdf`.
 
